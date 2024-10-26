@@ -1,8 +1,10 @@
-import { Card, CardBody, CardHeader, Typography, Button } from '@material-tailwind/react';
+import { Card, CardBody, CardHeader, Typography, Button } from '@material-tailwind/react'; 
 import { getUserName } from '../lib/account';
 import { useState, useEffect } from 'react';
 import { fetchMonsterDetails, fetchMonsterIds, MonsterDetails } from '../lib/monster';
-import { hexToCV, UIntCV } from '@stacks/transactions';
+import { hexToCV, UIntCV, uintCV, AnchorMode, PostConditionMode } from '@stacks/transactions';
+import { showContractCall } from '@stacks/connect';
+import { CONTRACT_ADDRESS, NETWORK, MONSTERS_CONTRACT_NAME } from '../lib/constants';
 
 export function MyMonsters({ stxAddress }: { stxAddress: string }) {
   const [loading, setLoading] = useState(false);
@@ -10,6 +12,7 @@ export function MyMonsters({ stxAddress }: { stxAddress: string }) {
   const [username, setUsername] = useState<string>('');
   const [monsters, setMonsters] = useState<MonsterDetails[]>([]);
 
+  
   // Fetch the BNS name for the user
   useEffect(() => {
     if (stxAddress) {
@@ -64,7 +67,39 @@ export function MyMonsters({ stxAddress }: { stxAddress: string }) {
     }
   }, [stxAddress]);
 
-  console.log({ monsters });
+// Function to call the smart contract to use a tool
+const useTool = async (monsterId: string) => {
+  const parsedId = parseInt(monsterId, 10);
+  if (isNaN(parsedId)) {
+    setStatus('Invalid Monster ID.');
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    setStatus('Sending transaction...');
+
+    await showContractCall({
+      contractAddress: CONTRACT_ADDRESS,
+      contractName: MONSTERS_CONTRACT_NAME,
+      functionName: 'use',
+      functionArgs: [uintCV(parsedId)],
+      network: NETWORK,
+      anchorMode: AnchorMode.Any,
+      postConditionMode: PostConditionMode.Allow,
+      onFinish: result => {
+        setStatus(`Tool used successfully! Transaction ID: ${result.txId}`);
+        setLoading(false);
+      },
+    });
+  } catch (e: any) {
+    console.error(e);
+    setStatus(`Transaction failed: ${e.message}`);
+    setLoading(false);
+  }
+};
+
   return (
     <div className="my-monsters-container p-4">
       {/* Display the BNS name */}
@@ -111,7 +146,11 @@ export function MyMonsters({ stxAddress }: { stxAddress: string }) {
                 <Typography className="text-gray-500 text-sm">
                   {monster.alive ? 'Status: Alive' : 'Status: Not Alive'}
                 </Typography>
-                <Button size="sm" className="mt-2">
+                <Button 
+                  size="sm" 
+                  className="mt-2" 
+                  onClick={() => useTool(monster.metaData.id.toString())}
+                >
                   Use
                 </Button>
               </CardBody>
