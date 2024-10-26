@@ -1008,6 +1008,10 @@ video {
   height: 2.25rem;
 }
 
+.h-96 {
+  height: 24rem;
+}
+
 .h-\[110px\] {
   height: 110px;
 }
@@ -1150,6 +1154,10 @@ video {
 
 .w-9 {
   width: 2.25rem;
+}
+
+.w-96 {
+  width: 24rem;
 }
 
 .w-\[110px\] {
