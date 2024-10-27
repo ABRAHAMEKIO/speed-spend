@@ -144,3 +144,5 @@ export async function fetchMonsterDetails(monsterId: bigint): Promise<MonsterDet
 
   return { owner, metaData, alive };
 }
+
+export const feed = async () => {};

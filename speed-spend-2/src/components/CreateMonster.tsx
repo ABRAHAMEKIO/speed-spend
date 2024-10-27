@@ -12,12 +12,6 @@ export function CreateMonster({ stxAddress }: { stxAddress: string }) {
   const [txId, setTxId] = useState<string>('');
   const [newName, setNewName] = useState<string>('');
 
-  const stringifyBigInt = (obj: any) => {
-    return JSON.stringify(obj, (key, value) =>
-      typeof value === 'bigint' ? value.toString() : value
-    );
-  };
-
   useEffect(() => {
     if (stxAddress) {
       fetchAccount(stxAddress).catch(e => {
@@ -47,11 +41,13 @@ export function CreateMonster({ stxAddress }: { stxAddress: string }) {
         ],
         network: NETWORK,
         anchorMode: AnchorMode.Any,
-        postConditionMode: PostConditionMode.Allow,
+        postConditionMode: PostConditionMode.Deny,
         onFinish: result => {
           setTxId(result.txId);
-          const readableResult = stringifyBigInt(result);
-          setStatus(`Monster created! Transaction ID: ${result.txId}\nDetails: ${readableResult}`);
+          setStatus(`The monster is born...`);
+          setLoading(false);
+        },
+        onCancel: () => {
           setLoading(false);
         },
       });
