@@ -1,7 +1,7 @@
-import { Card, CardBody, CardHeader, Typography, Button } from '@material-tailwind/react';
+import { Card, CardBody, CardHeader, Typography } from '@material-tailwind/react';
 import { CreateMonster } from '../components/CreateMonster';
-import { userSession } from '../user-session';
 import { MyMonsters } from '../components/MyMonsters';
+import { userSession } from '../user-session';
 
 export default function Monsters() {
   const userData = userSession?.loadUserData();
