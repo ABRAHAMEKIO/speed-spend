@@ -133,12 +133,6 @@ export function MyMonsters({ stxAddress }: { stxAddress: string }) {
 
   return (
     <div className="p-4">
-      <h1 className="text-3xl font-bold mb-4 text-center">Monsters</h1>
-      <div className="mb-6 text-center">
-        <Typography>
-          Create your Monster on the Nakamoto testnet in seconds!
-        </Typography>
-      </div>
 
       {/* Display User's Monsters */}
       {loading ? (
