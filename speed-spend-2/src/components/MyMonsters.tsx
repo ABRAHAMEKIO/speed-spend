@@ -1,23 +1,34 @@
 import { Typography } from '@material-tailwind/react';
-import { showContractCall } from '@stacks/connect';
 import {
-  AnchorMode,
-  hexToCV,
-  noneCV,
-  PostConditionMode,
+  ClarityType,
+  cvToString,
+  getContractMapEntry,
+  OptionalCV,
+  TupleCV,
   UIntCV,
   uintCV,
+  noneCV,
+  hexToCV,
 } from '@stacks/transactions';
-import { useEffect, useState } from 'react';
-import { CONTRACT_ADDRESS, MONSTERS_CONTRACT_NAME, NETWORK } from '../lib/constants';
-import { fetchMonsterDetails, fetchMonsterIds, MonsterDetails } from '../lib/monster';
+import React, { useEffect, useState } from 'react';
 import { MonsterCard } from './MonsterCard';
+import { CONTRACT_ADDRESS, infoApi, MONSTERS_CONTRACT_NAME, NETWORK } from '../lib/constants';
+import { fetchMonsterDetails, fetchMonsterIds, MonsterDetails } from '../lib/monster';
+import { showContractCall } from '@stacks/connect';
+import { AnchorMode, PostConditionMode } from '@stacks/transactions';
 import { TxStatus } from './TxStatus';
+
+// Define the types for better TypeScript support
+interface CompetitionData {
+  monsters: MonsterDetails[];
+  secondBestPrize?: MonsterDetails;
+}
 
 export function MyMonsters({ stxAddress }: { stxAddress: string }) {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string>('');
   const [monsters, setMonsters] = useState<MonsterDetails[]>([]);
+  const [competitionData, setCompetitionData] = useState<CompetitionData | null>(null);
   const [txId, setTxId] = useState<string>('');
 
   // Fetch the user's monster IDs and details
@@ -57,6 +68,39 @@ export function MyMonsters({ stxAddress }: { stxAddress: string }) {
     fn();
   }, [stxAddress]);
 
+  // Fetch competition data
+  useEffect(() => {
+    const getCompetitionData = async (): Promise<CompetitionData> => {
+      try {
+        const { tenure_height: tenureHeight } = await infoApi
+          .getCoreApiInfoRaw()
+          .then(r => r.raw.json());
+        console.log({ tenureHeight });
+        const entry = (await getContractMapEntry({
+          contractAddress: CONTRACT_ADDRESS,
+          contractName: MONSTERS_CONTRACT_NAME,
+          mapName: 'second-bests',
+          mapKey: uintCV(tenureHeight),
+          network: NETWORK,
+        })) as OptionalCV<TupleCV<{ 'monster-id': UIntCV; count: UIntCV }>>;
+        console.log({ entry: cvToString(entry) });
+        if (entry.type === ClarityType.OptionalSome && entry.value.data['monster-id'].value > 0n) {
+          const prize = await fetchMonsterDetails(entry.value.data['monster-id'].value);
+          return { monsters: [], secondBestPrize: prize };
+        } else {
+          return { monsters: [], secondBestPrize: undefined };
+        }
+      } catch (error) {
+        console.error('Error fetching competition data:', error);
+        return { monsters: [] };
+      }
+    };
+
+    getCompetitionData().then(data => {
+      setCompetitionData(data);
+    });
+  }, []);
+
   // Function to call the smart contract to use a tool
   const useTool = async (monsterId: string) => {
     setTxId('');
@@ -68,7 +112,6 @@ export function MyMonsters({ stxAddress }: { stxAddress: string }) {
 
     try {
       setStatus('Sending transaction...');
-
       await showContractCall({
         contractAddress: CONTRACT_ADDRESS,
         contractName: MONSTERS_CONTRACT_NAME,
@@ -90,6 +133,14 @@ export function MyMonsters({ stxAddress }: { stxAddress: string }) {
 
   return (
     <div className="p-4">
+      <h1 className="text-3xl font-bold mb-4 text-center">Monsters</h1>
+      <div className="mb-6 text-center">
+        <Typography>
+          Create your Monster on the Nakamoto testnet in seconds!
+        </Typography>
+      </div>
+
+      {/* Display User's Monsters */}
       {loading ? (
         <div className="mb-4">{<Typography>Loading...</Typography>}</div>
       ) : (
@@ -111,6 +162,28 @@ export function MyMonsters({ stxAddress }: { stxAddress: string }) {
       )}
       {status && <Typography>{status}</Typography>}
       {txId && <TxStatus txId={txId} resultPrefix="Tx result:" />}
+
+      {/* Display Competition Data */}
+      <div className="bg-white p-4 rounded shadow-md mt-6">
+        <h2 className="text-xl font-semibold mb-2">Competition</h2>
+        <div className="text-center mb-6">
+          <Typography>
+            The competition takes one tenure (usually 1 bitcoin block). The monster that used the
+            most tools (calling "use" contract function) wins the competition. The prize is the second-best monster.
+          </Typography>
+        </div>
+        <h2 className="text-xl font-semibold mb-2">Prize</h2>
+        {competitionData?.secondBestPrize ? (
+          <MonsterCard
+            monster={competitionData.secondBestPrize}
+            onClick={() => {
+              return;
+            }}
+          />
+        ) : (
+          <Typography>No prize available.</Typography>
+        )}
+      </div>
     </div>
   );
 }

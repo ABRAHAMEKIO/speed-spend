@@ -8,7 +8,6 @@ import ErrorPage from './error-page';
 import SendStx from './routes/send-stx';
 import Names from './routes/names';
 import Monsters from './routes/monsters';
-import Competition from './routes/competition';
 import './output.css';
 import Root from './routes/root';
 
@@ -21,7 +20,6 @@ const router = createBrowserRouter([
       { path: '/send-stx', element: <SendStx /> },
       { path: '/names', element: <Names /> },
       { path: '/monsters', element: <Monsters /> },
-      { path: '/competition', element: <Competition /> },
       { index: true, element: <Root /> },
     ],
   },
