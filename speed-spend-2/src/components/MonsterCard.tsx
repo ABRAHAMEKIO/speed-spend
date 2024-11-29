@@ -67,7 +67,7 @@ export const MonsterCard = ({
             {txId && <TxStatus txId={txId} resultPrefix="Feeding block:" />}
           </>
         )}
-        {actionLabel && (
+        {actionLabel && ( 
           <Button size="sm" className="mt-2" onClick={onClick}>
             {actionLabel}
           </Button>
